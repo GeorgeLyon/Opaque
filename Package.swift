@@ -91,7 +91,6 @@ let package = Package(
     products: [
         .library(
             name: "libopaque",
-            type: .static,
             targets: ["CLibOpaque"]),
         .library(
             name: "Opaque",

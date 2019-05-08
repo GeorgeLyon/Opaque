@@ -1,6 +1,11 @@
 #ifndef libopaque_h
 #define libopaque_h
 
+typedef struct { unsigned char bytes[8]; } opq_word;
+
+// Code linking with this library must provide a cryptographically secure implementation of opq_generate_random_bytes
+extern void opq_generate_random_bytes(unsigned char *buffer, int buffer_length);
+
 typedef enum { OPQ_FATAL_ERROR, OPQ_FAILURE, OPQ_SUCCESS } OPQResultType;
 typedef struct {
     OPQResultType type;
@@ -20,8 +25,6 @@ typedef struct {
         } failure;
     } body;
 } opq_result;
-
-typedef struct { unsigned char bytes[8]; } opq_word;
 
 typedef struct {
     opq_word words[4];
