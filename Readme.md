@@ -52,7 +52,7 @@ We use [`libecc`](https://github.com/ANSSI-FR/libecc) for operations on `secp256
 
 ### PHC-winner-argon2
 
-Argon2 won the [Password Hashing Competition](https://github.com/P-H-C/phc-winner-argon2). We currently use their reference implementation as it is compact and simple. The other alternative, `libsodium` is well regarded but seemed harder to vendor as a dpendency as it is often recommended to have the static library installed on your system to use.
+[Argon2](https://github.com/P-H-C/phc-winner-argon2) won the [Password Hashing Competition](https://password-hashing.net). We currently use their reference implementation as it is compact and simple. The other alternative, `libsodium` is well regarded but seemed harder to vendor as a dpendency as it is often recommended to have the static library installed on your system to use.
 
 ### TweetNaCl
 
