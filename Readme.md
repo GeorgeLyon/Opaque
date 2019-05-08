@@ -58,3 +58,8 @@ Argon2 won the [Password Hashing Competition](https://github.com/P-H-C/phc-winne
 
 Again, though standard `NaCl` is almost certainly more performant, [tweetNaCl](https://tweetnacl.cr.yp.to) and its emphasis on compactness and simplicity was more aligned with our goals. Additionally, the performance of encryption and sigining are likely to be dwarfed by the computational cost of running a KDF, so we are not as worried about performance here.
 
+## Development
+
+Currently, my use case for this library is for use with a Swift application and thus I'm using Swift Package Manager to build the C code. I also like that SwiftPM is more declarative than `make`, and doesnt require specifying what shell commands to run. Eventually, I may have to figure out a different build tool to also support compiling to WebAssembly.
+
+To run the code, simply have Swift installed and run `swift test`.
