@@ -2,10 +2,9 @@ import XCTest
 @testable import Opaque
 
 final class OpaqueTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
+    func testExample() throws {
+        print(try Salt.random())
+        
         XCTAssertEqual(Opaque().text, "Hello, World!")
     }
 
