@@ -85,7 +85,7 @@ extension Opaque {
 
 extension Opaque.EncryptedPassword {
     
-    public func salt(_ salt: Opaque.Salt) throws -> Opaque.EncryptedSaltedPassword {
+    public func salt(with salt: Opaque.Salt) throws -> Opaque.EncryptedSaltedPassword {
         var raw = opq_encrypted_salted_password()
         try withUnsafePointer(to: self.raw) { encryptedPasswordPointer in
             withUnsafePointer(to: salt.raw) { saltPointer in
@@ -119,8 +119,8 @@ extension Opaque.VerificationNonce {
     
     public static let zero = Opaque.VerificationNonce(raw: opq_verification_nonce())
     
-    public mutating func increment() {
-        opq_increment_verification_nonce(&raw)
+    public mutating func increment() throws {
+        try opq_increment_verification_nonce(&raw).throwIfError()
     }
     
 }

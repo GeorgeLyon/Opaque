@@ -13,9 +13,9 @@ typedef struct {
         
         // Valid if type is OPQ_FATAL_ERROR or OPQ_FAILURE
         struct {
-            const char *file;
-            int line;
             const char *function;
+            int line;
+            
             const char *message;
         } failure;
     } body;
@@ -48,7 +48,7 @@ typedef struct {
 } opq_public_key;
 
 typedef struct {
-    opq_word words[1];
+    opq_word words[4];
 } opq_verification_nonce;
 
 typedef struct {

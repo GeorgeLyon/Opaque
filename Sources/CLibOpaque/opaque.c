@@ -16,7 +16,7 @@
     ((opq_result){ \
         .type = failure_type, \
         .body = { \
-            .failure = { __FILE__, __LINE__, __FUNCTION__, message } \
+            .failure = { __FUNCTION__,  __LINE__, message } \
         } \
     })
 #define FAILURE(message) _NOT_SUCCESS(OPQ_FAILURE, message)
@@ -189,7 +189,7 @@ opq_result opq_salt_encrypted_password(
     
     // load salt
     nn salt_nn;
-    if (sizeof(salt_nn) != BYTECEIL(params.ec_gen_order_bitlen))
+    if (sizeof(*salt) != BYTECEIL(params.ec_gen_order_bitlen))
         return FATAL_ERROR("Incorrect size for salt");
     nn_init_from_buf(&salt_nn, (const u8 *)&salt, sizeof(*salt));
     
@@ -228,11 +228,11 @@ opq_result opq_generate_keys(
     // Generate registration keys
     opq_plaintext_key plaintext_key = {};
     {
-        if (sizeof(output_public_key) != crypto_sign_PUBLICKEYBYTES)
+        if (sizeof(*output_public_key) != crypto_sign_PUBLICKEYBYTES)
             return FATAL_ERROR("Incorrect size for public key");
         
         int result = crypto_sign_keypair(
-                (unsigned char *)&output_public_key,
+                (unsigned char *)output_public_key,
                 (unsigned char *)&plaintext_key.secret);
         if (result != 0)
             return FATAL_ERROR("Failed to generate key pair");
@@ -259,13 +259,13 @@ opq_result opq_generate_keys(
         if (result != 0)
             return FATAL_ERROR("Failed to encrypt keypair");
         
-        if (sizeof(output_encrypted_private_key) != sizeof(ciphertext_key.encrypted_secret))
+        if (sizeof(*output_encrypted_private_key) != sizeof(ciphertext_key.encrypted_secret))
             FATAL_ERROR("Incorrect size for encrypted key");
-        
+
         memcpy(
-               &output_encrypted_private_key,
+               output_encrypted_private_key,
                &ciphertext_key.encrypted_secret,
-               sizeof(output_encrypted_private_key));
+               sizeof(*output_encrypted_private_key));
     }
     
     return SUCCESS;
@@ -275,7 +275,11 @@ opq_result opq_generate_keys(
 opq_result opq_increment_verification_nonce(
                 opq_verification_nonce *verification_nonce)
 {
-    *(uint64_t*)(&verification_nonce->words[0]) += 1;
+    uint64_t *value_pointer = (uint64_t *)(&verification_nonce->words[0]);
+    if (*value_pointer == UINT64_MAX)
+        return FAILURE("All nonces have been used");
+    *value_pointer += 1;
+    return SUCCESS;
 }
 
 opq_result opq_generate_verification(
@@ -296,9 +300,9 @@ opq_result opq_generate_verification(
     {
         
         opq_ciphertext_key ciphertext_key = {};
-        if (sizeof(encrypted_private_key) !=  sizeof(ciphertext_key.encrypted_secret))
+        if (sizeof(*encrypted_private_key) !=  sizeof(ciphertext_key.encrypted_secret))
             return FATAL_ERROR("Incorrect size for encrypted secret key");
-        memcpy(&ciphertext_key.encrypted_secret, &encrypted_private_key, sizeof(ciphertext_key.encrypted_secret));
+        memcpy(&ciphertext_key.encrypted_secret, encrypted_private_key, sizeof(ciphertext_key.encrypted_secret));
         
         // See note in opq_generate_keys
         unsigned char nonce[crypto_secretbox_NONCEBYTES] = {};
@@ -336,7 +340,6 @@ opq_result opq_generate_verification(
             return FATAL_ERROR("Failed to sign verification");
     }
     
-    
     return SUCCESS;
 }
 
@@ -350,10 +353,10 @@ opq_result opq_validate_verification(
         
         if (sizeof(*verification) != crypto_sign_BYTES)
             return FATAL_ERROR("Incorrect size for verification");
-        memcpy(&signed_nonce.signature, &verification, crypto_sign_BYTES);
+        memcpy(&signed_nonce.signature, verification, crypto_sign_BYTES);
     }
     
-    if (sizeof(public_key) != crypto_sign_PUBLICKEYBYTES)
+    if (sizeof(*public_key) != crypto_sign_PUBLICKEYBYTES)
         return FATAL_ERROR("Incorrect size for public key");
     
     opq_signed_nonce verified_nonce;
