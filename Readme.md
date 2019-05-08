@@ -46,15 +46,15 @@ As was mentioned in the previous secition, [Daniel J. Bernstien](https://en.wiki
 
 All dependencies are vendored for convenience, though care is taken not to edit the dependency source unless absolutely necessary. The goal is to have this library build across many platforms without requiring that libraries be installed and available on those platforms.
 
-## LibECC
+### LibECC
 
 We use [`libecc`](https://github.com/ANSSI-FR/libecc) for operations on `secp256r1`.  `libecc` also provides SHA3, which is convenient and saves us an extra dependency. Most importantly, `libecc` aims to be simple and uses a minimal amount of code to provide the functionality Opaque requires. Also, `libecc` seems to be under development by the French government, which gives me hope that it is (or will become) fairly robust.
 
-## PHC-winner-argon2
+### PHC-winner-argon2
 
 Argon2 won the [Password Hashing Competition](https://github.com/P-H-C/phc-winner-argon2). We currently use their reference implementation as it is compact and simple. The other alternative, `libsodium` is well regarded but seemed harder to vendor as a dpendency as it is often recommended to have the static library installed on your system to use.
 
-## TweetNaCl
+### TweetNaCl
 
 Again, though standard `NaCl` is almost certainly more performant, [tweetNaCl](https://tweetnacl.cr.yp.to) and its emphasis on compactness and simplicity was more aligned with our goals. Additionally, the performance of encryption and sigining are likely to be dwarfed by the computational cost of running a KDF, so we are not as worried about performance here.
 
