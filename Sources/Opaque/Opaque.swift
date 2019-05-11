@@ -8,15 +8,15 @@ public enum Opaque {
         
     }
     
-    public struct EncryptedPassword {
+    public struct EncryptedPassword: Base64RawCodable {
         
-        fileprivate let raw: opq_encrypted_password
+        let raw: opq_encrypted_password
         
     }
     
-    public struct EncryptedSaltedPassword {
+    public struct EncryptedSaltedPassword: Base64RawCodable {
         
-        fileprivate let raw: opq_encrypted_salted_password
+        let raw: opq_encrypted_salted_password
         
     }
     
@@ -26,27 +26,35 @@ public enum Opaque {
         
     }
     
-    public struct PublicKey {
-    
-        fileprivate let raw: opq_public_key
+    public struct EncryptedPrivateKey: Base64RawCodable {
+        
+        let raw: opq_encrypted_private_key
         
     }
     
-    public struct EncryptedPrivateKey {
+    public struct PublicKey: Base64RawCodable {
         
-        fileprivate let raw: opq_encrypted_private_key
-        
-    }
-    
-    public struct VerificationNonce {
-        
-        fileprivate var raw: opq_verification_nonce
+        let raw: opq_public_key
         
     }
     
-    public struct Verification {
+    public struct VerificationNonce: Base64RawCodable {
         
-        fileprivate let raw: opq_verification
+        var raw: opq_verification_nonce
+        
+        init(raw: opq_verification_nonce) {
+            self.raw = raw
+        }
+        
+        public init() {
+            self.raw = opq_verification_nonce()
+        }
+        
+    }
+    
+    public struct Verification: Base64RawCodable {
+        
+        let raw: opq_verification
         
     }
 
@@ -69,13 +77,11 @@ extension Opaque {
     {
         var encryptedPassword = opq_encrypted_password()
         var passwordKey = opq_password_key()
-        let passwordLength = password.utf8.count
         try password.withCString({ cString in
             opq_encrypt_password(
                 &encryptedPassword,
                 &passwordKey,
-                UnsafeRawPointer(cString).assumingMemoryBound(to: UInt8.self),
-                Int32(passwordLength))
+                cString)
         }).throwIfError()
         
         return (EncryptedPassword(raw: encryptedPassword), PasswordKey(raw: passwordKey))
@@ -85,7 +91,7 @@ extension Opaque {
 
 extension Opaque.EncryptedPassword {
     
-    public func salt(with salt: Opaque.Salt) throws -> Opaque.EncryptedSaltedPassword {
+    public func salted(with salt: Opaque.Salt) throws -> Opaque.EncryptedSaltedPassword {
         var raw = opq_encrypted_salted_password()
         try withUnsafePointer(to: self.raw) { encryptedPasswordPointer in
             withUnsafePointer(to: salt.raw) { saltPointer in
@@ -163,3 +169,11 @@ extension Opaque.Verification {
     
 }
 
+// MARK: - C Structs
+
+extension opq_encrypted_password: CStruct { }
+extension opq_encrypted_salted_password: CStruct { }
+extension opq_encrypted_private_key: CStruct { }
+extension opq_public_key: CStruct { }
+extension opq_verification_nonce: CStruct { }
+extension opq_verification: CStruct { }

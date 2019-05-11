@@ -7,23 +7,14 @@ An implementation of the [OPAQUE protocol](https://tools.ietf.org/html/draft-kra
 * [The Draft Proposal](https://tools.ietf.org/html/draft-krawczyk-cfrg-opaque-00)
 * [The Academic Paper](https://eprint.iacr.org/2018/163.pdf)
 
-## Known Issues
-
-* `CLibOpaque` is meant to be built as a static library. This allows the bindings to provide their own implementation of required symbols, such as `opq_generate_random_bytes`. Currently, `swift package generate-xcodeproj` creates a dynamic library target for it, despite what is specified in `Package.swift`. Developers must manually change the `Mach-O Type` build setting to `Static Library` in the generated Xcode project or they will encounter build failures.
-* Currently, Xcode seems to fail to rebuild `CLibOpaque` when the C source files change. I'm not sure why this is happening, but am currently working around it by always doing a clean build. The codebase is very small, and that operation is fairly quick.
-
-## Next Goal
-
-* Compile to WebAssembly and create a Javascript test case which can run in the browser
-
 ## Discussion
 
-Opaque is a new method of [augmented password-authenticated key exchange](https://en.wikipedia.org/wiki/Password-authenticated_key_agreement) (aPAKE). aPAKE allows a server and client to agree on a key without the server ever receiving the plaintext password. Opaque improves on previous methods by never revealing the server's [salt](https://en.wikipedia.org/wiki/Salt_(cryptography)) to the client, and thus is more resistent to certain types of precomputation attack.
-The server never receiving a plaintext password is a very valuable property, as numerous services have accidentally logged millions of user passwords (including a recent, high-profile [Facebook blunder](https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/)). A more subtle feature of Opaque is that the client runs a [key derivation function](https://en.wikipedia.org/wiki/Key_derivation_function) (KDF), which is traditionally run by the server. KDF makes authenticating a password more computationally expensive, and thus any attack involving guessing the password becomes much more computationally expensive. It is uncommon for servers to opt for the most secure KDFs, as that is often too costly from a resource standpoint. If that cost is distributed across clients, however, it becomes feasible to use the most secure KDFs to secure client passwords. This is covered in [section 3.4](https://tools.ietf.org/html/draft-krawczyk-cfrg-opaque-00#section-3.4) of the draft.
+Opaque is a new method of [augmented password-authenticated key exchange](https://en.wikipedia.org/wiki/Password-authenticated_key_agreement) (aPAKE). aPAKE allows a server and client to agree on a key without the server ever receiving the plaintext password. Opaque improves on previous methods by never revealing the server's [salt](https://en.wikipedia.org/wiki/Salt_(cryptography)) to the client, and thus is more resistent to certain classes of precomputation attack. The server never receiving a plaintext password is a very valuable property, as numerous services have accidentally logged millions of user passwords (including a recent, high-profile [Facebook blunder](https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/)).
+A more subtle feature of Opaque is that the protocol allows for a client-run [key derivation function](https://en.wikipedia.org/wiki/Key_derivation_function) (KDF), which is traditionally run by the server. KDF makes authenticating a password more computationally expensive, and thus any attack involving guessing the password becomes much more computationally expensive. It is uncommon for servers to opt for the most secure KDFs, as that is often too costly from a resource standpoint. If that cost is distributed across clients, however, it becomes feasible to use the most secure KDFs, like [Argon2](https://en.wikipedia.org/wiki/Argon2), to secure client passwords. This is covered in [section 3.4](https://tools.ietf.org/html/draft-krawczyk-cfrg-opaque-00#section-3.4) of the draft.
 
 ## Selection of cryptographic primitives
 
-While Opaque defines the methodology of authentication, it does not specify the specific cryptographic primitives to use. This implementation aims to provide a reasonable set of primitives to use, and configuration is not currently a focus point.
+While Opaque defines the methodology of authentication, it does not specify the specific cryptographic primitives to use. This implementation aims to provide a reasonable set of primitives to use, and configuration is not currently a non-goal.
 
 ### Cyclic Group of Prime Order: `secp256r1`
 
@@ -60,6 +51,51 @@ Again, though standard `NaCl` is almost certainly more performant, [tweetNaCl](h
 
 ## Development
 
-Currently, my use case for this library is for use with a Swift application and thus I'm using Swift Package Manager to build the C code. I also like that SwiftPM is more declarative than `make`, and doesnt require specifying what shell commands to run. Eventually, I may have to figure out a different build tool to also support compiling to WebAssembly.
+### Swift
 
-To run the code, simply have Swift installed and run `swift test`.
+Currently, my use case for this library is for use with a Swift application and thus I'm using Swift Package Manager to build the C code. I also like that SwiftPM is more declarative than `make` and doesn't require specifying what shell commands to run.
+
+To run the code, simply have Swift installed and run `swift test`. 
+
+### WebAssembly
+
+#### Compiling to WebAssembly
+
+**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the clang that ships with Xcode does not support this. 
+
+```
+clang \
+--target=wasm32 \
+-Os \
+-flto \
+-nostdlib \
+-Wl,--no-entry \
+-Wl,--export={malloc,strlen} \
+-Wl,--export=opq_{encrypt_password,generate_keys,generate_verification} \
+-Wl,--export=opq_size_of_{result,encrypted_password,password_key,encrypted_salted_password,encrypted_private_key,public_key,verification_nonce,verification} \
+-Wl,--export=opq_result_{message, type{,_{success,failure,fatal_error}}} \
+-Wl,--export=Base64{en,de}code{,_len} \
+-Wl,--allow-undefined \
+-Wl,--lto-O3 \
+-DWITH_LIBECC_CONFIG_OVERRIDE \
+-DWITH_CURVE_SECP256R1 \
+-DWITH_HASH_SHA3_256 \
+-DWITH_SIG_ECDSA \
+-DWORDSIZE=32 \
+-DARGON2_NO_THREADS \
+-I Sources/CLibOpaque/Dependencies/libecc/src \
+-I Sources/CLibOpaque/Dependencies/argon2/include \
+-I Sources/CLibOpaque/Dependencies/tweetnacl \
+-I Sources/CLibOpaque/include \
+-I Sources/WebAssembly/Shim/Dependencies/base64 \
+-I Sources/WebAssembly/Shim/include \
+$(swift package describe --type json | jq -r '.targets[] | select(.c99name == "CLibOpaque").sources[]' | sed 's@^@Sources/CLibOpaque/@') \
+$(ls Sources/WebAssembly/Shim/*.c | grep -v emscripten) \
+Sources/WebAssembly/Shim/Dependencies/base64/base64.c \
+-o opaque.wasm
+```
+
+#### Testing WebAssembly
+
+The `WebAssemblyTestCompanion` target can be used in conjunction with `opaque.html` and the compiled `opaque.wasm` to demonstrate compatibility between the C and WebAssembly products.
+

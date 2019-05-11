@@ -10,7 +10,7 @@ enum Sources {
         "src/blake2/blake2b.c",
         "src/thread.c",
         "src/encoding.c",
-        "src/opt.c",
+        "src/ref.c",
     ].map({ "Dependencies/argon2/\($0)" })
     
     static let libecc: [String] = [
@@ -73,14 +73,17 @@ enum Sources {
 enum Settings  {
     
     static let libargon2: [CSetting] = [
+        .headerSearchPath("Sources/CLibOpaque/Dependencies/argon2/include"),
         .headerSearchPath("Dependencies/argon2/include")
     ]
     
     static let libecc: [CSetting] = [
+        .headerSearchPath("Sources/CLibOpaque/Dependencies/libecc/src"),
         .headerSearchPath("Dependencies/libecc/src"),
     ]
     
     static let tweetNaCl: [CSetting] = [
+        .headerSearchPath("Sources/CLibOpaque/Dependencies/tweetnacl"),
         .headerSearchPath("Dependencies/tweetnacl")
     ]
     
@@ -95,20 +98,26 @@ let package = Package(
         .library(
             name: "Opaque",
             targets: ["Opaque"]),
+        
+        .executable(
+            name: "WebAssemblyTestCompanion",
+            targets: ["WebAssemblyTestCompanion"])
     ],
     dependencies: [
     ],
     targets: [
+        //  Swift Sources
+        .target(
+            name: "PlatformDependencies"),
         .target(
             name: "CLibOpaque",
-            path: ".",
+            dependencies: ["PlatformDependencies"],
             sources: Array([
                 Sources.libargon2,
                 Sources.libecc,
                 Sources.tweetNaCl,
-                [ "Sources/CLibOpaque" ]
+                ["dependencies.c", "opaque.c"]
             ].joined()),
-            publicHeadersPath: "Sources/CLibOpaque/include",
             cSettings: Settings.libargon2 + Settings.libecc + Settings.tweetNaCl),
         .target(
             name: "Opaque",
@@ -116,5 +125,11 @@ let package = Package(
         .testTarget(
             name: "OpaqueTests",
             dependencies: ["Opaque"]),
+        
+        // WebAssembly Test Companion
+        .target(
+            name: "WebAssemblyTestCompanion",
+            dependencies: ["Opaque"],
+            path: "Sources/WebAssembly/TestCompanion")
     ]
 )

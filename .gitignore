@@ -2,3 +2,12 @@
 /.build
 /Packages
 /*.xcodeproj
+.swiftpm
+.vscode
+
+*.js
+*.wasm
+*.wast
+*.map
+
+

@@ -3,8 +3,12 @@
 
 typedef struct { unsigned char bytes[8]; } opq_word;
 
-// Code linking with this library must provide a cryptographically secure implementation of opq_generate_random_bytes
+// MARK: - Dependencies
+
+// Fills `buffer` with `buffer_length` cryptographically secure random bytes
 extern void opq_generate_random_bytes(unsigned char *buffer, int buffer_length);
+
+// MARK: - API
 
 typedef enum { OPQ_FATAL_ERROR, OPQ_FAILURE, OPQ_SUCCESS } OPQResultType;
 typedef struct {
@@ -31,12 +35,12 @@ typedef struct {
 } opq_salt;
 
 typedef struct {
-    opq_word words[4];
-} opq_password_key;
-
-typedef struct {
     opq_word words[12];
 } opq_encrypted_password;
+
+typedef struct {
+    opq_word words[4];
+} opq_password_key;
 
 typedef struct {
     opq_word words[12];
@@ -61,10 +65,13 @@ typedef struct {
 opq_result opq_generate_random_salt(
                 opq_salt *output_salt);
 
+/**
+ - parameter password: Must be a '\0' terminated C string.
+ */
 opq_result opq_encrypt_password(
                 opq_encrypted_password *output_encrypted_password,
                 opq_password_key *output_password_key,
-                const unsigned char *password, int password_length);
+                const char *password);
 
 opq_result opq_salt_encrypted_password(
                 opq_encrypted_salted_password *output_encrypted_salted_password,
@@ -72,9 +79,9 @@ opq_result opq_salt_encrypted_password(
                 const opq_salt *salt);
 
 opq_result opq_generate_keys(
-                opq_encrypted_private_key *output_encrypted_secret_key,
+                opq_encrypted_private_key *opq_encrypted_private_key,
                 opq_public_key *output_public_key,
-                const opq_encrypted_salted_password *output_encrypted_salted_password,
+                const opq_encrypted_salted_password *encrypted_salted_password,
                 const opq_password_key *password_key);
 
 opq_result opq_increment_verification_nonce(
@@ -82,9 +89,9 @@ opq_result opq_increment_verification_nonce(
 
 opq_result opq_generate_verification(
                 opq_verification *output_verification,
-                const opq_encrypted_private_key *encrypted_secret_key,
+                const opq_encrypted_private_key *encrypted_private_key,
                 const opq_verification_nonce *verification_nonce,
-                const opq_encrypted_salted_password *output_encrypted_salted_password,
+                const opq_encrypted_salted_password *encrypted_salted_password,
                 const opq_password_key *password_key);
 
 opq_result opq_validate_verification(

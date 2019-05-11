@@ -2,6 +2,10 @@ import CLibOpaque
 
 extension opq_result.__Unnamed_union_body.__Unnamed_struct_failure: Error {
     
+    public var localizedDescription: String {
+        return String(cString: message)
+    }
+    
 }
 
 extension opq_result {

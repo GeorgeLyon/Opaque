@@ -8,8 +8,11 @@
 #import "tweetnacl.h"
 
 #import <string.h>
+#import <assert.h>
 
-// Result
+#define MEMORY_HARDNESS 18
+
+// MARK: - Result
 
 #define SUCCESS ((opq_result){ OPQ_SUCCESS })
 #define _NOT_SUCCESS(failure_type, message) \
@@ -22,6 +25,21 @@
 #define FAILURE(message) _NOT_SUCCESS(OPQ_FAILURE, message)
 #define FATAL_ERROR(message) _NOT_SUCCESS(OPQ_FATAL_ERROR, message)
 
+// MARK: - Helpers
+
+#define clear_struct(ref) { \
+    static void *(*const volatile memset_sec)(void *, int, size_t) = &memset; \
+    memset_sec(ref, 0, sizeof(*ref)); \
+}
+
+#define copy_struct(source, destination) { \
+    int source_size = sizeof(*source);\
+    int destination_size = sizeof(*destination); \
+    if (source_size != destination_size) \
+        FATAL_ERROR(#source " size must match " #destination); \
+    memcpy(destination, source, source_size); \
+}
+
 // LibECC primitive
 
 static void import_default_params(ec_params *out) {
@@ -33,8 +51,6 @@ static void import_default_params(ec_params *out) {
 typedef struct {
     opq_word words[4];
 } opq_salted_password;
-
-#define MEMORY_HARDNESS 18
 
 static opq_result opq_decrypt_salted_password(
                 opq_salted_password *output_salted_password,
@@ -75,20 +91,40 @@ static opq_result opq_decrypt_salted_password(
     aff_pt_uninit(&secret_aff);
     
     // Strengthen secret
-    
-    if (sizeof(weaker_secret) % 2 != 0)
-        return FATAL_ERROR("Incorrect size for salted password");
-    const unsigned char* password = (const unsigned char *)&weaker_secret;
-    int password_length = sizeof(weaker_secret) / 2;
-    const unsigned char* salt = password + password_length;
-    int salt_length = sizeof(weaker_secret) - password_length;
-    
-    uint32_t t = 2;
-    uint32_t m = 1 << MEMORY_HARDNESS;
-    int result = argon2id_hash_raw(t, m, 1, password, password_length, salt, salt_length, (void *)output_salted_password, sizeof(*output_salted_password));
-    memset(&weaker_secret, 0, sizeof(weaker_secret));
-    
-    return result == ARGON2_OK ? SUCCESS : FATAL_ERROR("Argon2id failed");
+    {
+        if (sizeof(weaker_secret) % 2 != 0)
+            return FATAL_ERROR("Incorrect size for salted password");
+        unsigned char* password = (unsigned char *)&weaker_secret;
+        int password_length = sizeof(weaker_secret) / 2;
+        unsigned char* salt = password + password_length;
+        int salt_length = sizeof(weaker_secret) - password_length;
+        
+        argon2_context context = {};
+        
+        // Argon2 Parameters
+        context.t_cost = 2;
+        context.m_cost = 1 << MEMORY_HARDNESS;
+        
+        context.out = (unsigned char *)output_salted_password;
+        context.outlen = sizeof(*output_salted_password);
+        context.pwd = password;
+        context.pwdlen = password_length;
+        context.salt = salt;
+        context.saltlen = salt_length;
+        context.secret = NULL;
+        context.secretlen = 0;
+        context.ad = NULL;
+        context.adlen = 0;
+        context.lanes = 1;
+        context.threads = 1;
+        context.flags = ARGON2_DEFAULT_FLAGS;
+        context.version = ARGON2_VERSION_NUMBER;
+        
+        int result = argon2_ctx(&context, Argon2_id);
+        clear_struct(&weaker_secret);
+        
+        return result == ARGON2_OK ? SUCCESS : FATAL_ERROR("Argon2id failed");
+    }
 }
 
 // Keys (These needed to be padded with zeroes for NaCl)
@@ -110,7 +146,7 @@ typedef struct __attribute__((packed)) {
     opq_verification_nonce nonce;
 } opq_signed_nonce;
 
-// API
+// MARK: - API
 
 opq_result opq_generate_random_salt(
                 opq_salt *output_salt)
@@ -133,17 +169,17 @@ opq_result opq_generate_random_salt(
 opq_result opq_encrypt_password(
                 opq_encrypted_password *output_encrypted_password,
                 opq_password_key *output_password_key,
-                const unsigned char *password, int password_length)
+                const char *password)
 {
     ec_params params;
     import_default_params(&params);
     
     unsigned char password_digest[SHA3_256_DIGEST_SIZE];
-    sha3_256(password, password_length, (u8 *)&password_digest);
+    sha3_256((const unsigned char *)password, strlen(password), (u8 *)&password_digest);
     
     nn password_n;
     nn_init_from_buf(&password_n, (const u8 *)&password_digest, sizeof(password_digest));
-    memset(&password_digest, 0, sizeof(password_digest));
+    clear_struct(&password_digest);
     
     // a = generator * password_n
     prj_pt a;
@@ -253,19 +289,16 @@ opq_result opq_generate_keys(
             (const unsigned char *)&nonce,
             (const unsigned char *)&salted_password);
         
-        memset(&plaintext_key, 0, sizeof(plaintext_key));
-        memset(&salted_password, 0, sizeof(salted_password));
+        clear_struct(&plaintext_key);
+        clear_struct(&salted_password);
         
         if (result != 0)
             return FATAL_ERROR("Failed to encrypt keypair");
         
         if (sizeof(*output_encrypted_private_key) != sizeof(ciphertext_key.encrypted_secret))
             FATAL_ERROR("Incorrect size for encrypted key");
-
-        memcpy(
-               output_encrypted_private_key,
-               &ciphertext_key.encrypted_secret,
-               sizeof(*output_encrypted_private_key));
+        
+        copy_struct(&ciphertext_key.encrypted_secret, output_encrypted_private_key);
     }
     
     return SUCCESS;
@@ -300,9 +333,8 @@ opq_result opq_generate_verification(
     {
         
         opq_ciphertext_key ciphertext_key = {};
-        if (sizeof(*encrypted_private_key) !=  sizeof(ciphertext_key.encrypted_secret))
-            return FATAL_ERROR("Incorrect size for encrypted secret key");
-        memcpy(&ciphertext_key.encrypted_secret, encrypted_private_key, sizeof(ciphertext_key.encrypted_secret));
+        
+        copy_struct(encrypted_private_key, &ciphertext_key.encrypted_secret)
         
         // See note in opq_generate_keys
         unsigned char nonce[crypto_secretbox_NONCEBYTES] = {};
@@ -313,7 +345,7 @@ opq_result opq_generate_verification(
                 (const unsigned char *)&nonce,
                 (const unsigned char *)&salted_password);
         
-        memset(&salted_password, 0, sizeof(salted_password));
+        clear_struct(&salted_password);
         
         if (result != 0)
             return FAILURE("Authentication failed.");
@@ -328,13 +360,13 @@ opq_result opq_generate_verification(
                 (const unsigned char *)verification_nonce, sizeof(*verification_nonce),
                 (const unsigned char *)&plaintext_key.secret);
         
-        memset(&plaintext_key, 0, sizeof(plaintext_key));
+        clear_struct(&plaintext_key);
         
         if (sizeof(*output_verification) != crypto_sign_BYTES)
             return FATAL_ERROR("Incorrect size for verification");
-        memcpy(output_verification, &signed_nonce.signature, crypto_sign_BYTES);
+        copy_struct(&signed_nonce.signature, output_verification)
         
-        memset(&signed_nonce, 0, sizeof(signed_nonce));
+        clear_struct(&signed_nonce);
         
         if (result != 0)
             return FATAL_ERROR("Failed to sign verification");
@@ -349,11 +381,11 @@ opq_result opq_validate_verification(
                 const opq_verification *verification) {
     opq_signed_nonce signed_nonce = {};
     {
-        memcpy(&signed_nonce.nonce, verification_nonce, sizeof(opq_verification_nonce));
+        copy_struct(verification_nonce, &signed_nonce.nonce)
         
         if (sizeof(*verification) != crypto_sign_BYTES)
             return FATAL_ERROR("Incorrect size for verification");
-        memcpy(&signed_nonce.signature, verification, crypto_sign_BYTES);
+        copy_struct(verification, &signed_nonce.signature)
     }
     
     if (sizeof(*public_key) != crypto_sign_PUBLICKEYBYTES)

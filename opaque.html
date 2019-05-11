@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<script type="module">
+  const text = {
+    encoder: new TextEncoder(),
+    decoder: new TextDecoder()
+  }
+  const module = fetch('opaque.wasm')
+    .then(response => response.arrayBuffer())
+    .then(WebAssembly.compile)
+  async function init() {
+    const importObject = {
+      env: {
+        opq_generate_random_bytes: (start, length) => {
+          let buffer = instance.exports.memory.buffer
+          window.crypto.getRandomValues(new Uint8Array(buffer, start, length))
+        }
+      }
+    }
+    const instance = await WebAssembly.instantiate(await module, importObject)
+    const exports = instance.exports
+
+    function allocate(size) {
+      const address = exports.malloc(size)
+      if (address == 0) {
+        throw "Allocation failed."
+      }
+      return address
+    }
+
+    function importString(string) {
+      const encodedString = text.encoder.encode(string)
+      const length = encodedString.byteLength + 1
+      const address = allocate(length)
+      const buffer = new Uint8Array(exports.memory.buffer, address, length)
+      buffer.set(encodedString)
+      buffer[length - 1] = 0
+      return address
+    }
+
+    const base64 = {
+      encode: function (address, length) {
+        const encodedLength = exports.Base64encode_len(length)
+        const encodedString = allocate(encodedLength)
+        const returnValue = exports.Base64encode(encodedString, address, length)
+        if (returnValue != encodedLength) {
+          throw "Base64 encoding failed."
+        }
+        // We subtract 1 so that we exclude the trailing \0
+        return text.decoder.decode(new Uint8Array(exports.memory.buffer, encodedString, encodedLength - 1))
+      },
+      decode: function(string) {
+        const encodedString = importString(string)
+        const decodedLength = exports.Base64decode_len(encodedString)
+        const decoded = allocate(decodedLength)
+        const returnValue = exports.Base64decode(decoded, encodedString)
+        return decoded
+      }
+    }
+
+    function verifyResult(result) {
+      if (exports.opq_result_type(result) == exports.opq_result_type_success()) {
+        return
+      }
+
+      const message = exports.opq_result_message(result)
+      const length = exports.strlen(message)
+      const memory = new Uint8Array(exports.memory.buffer, message, length)
+      throw text.decoder.decode(memory)
+    }
+
+    const api = {
+      encryptPassword: function(password) {
+        const result = allocate(exports.opq_size_of_result())
+        const encryptedPassword = allocate(exports.opq_size_of_encrypted_password())
+        const passwordKey = allocate(exports.opq_size_of_password_key())
+
+        exports.opq_encrypt_password(result,
+          encryptedPassword, 
+          passwordKey,
+          importString(password)
+        )
+        verifyResult(result)
+
+        return {
+          encryptedPassword: base64.encode(
+            encryptedPassword,
+            exports.opq_size_of_encrypted_password()
+          ),
+          passwordKey: base64.encode(
+            passwordKey,
+            exports.opq_size_of_password_key()
+          )
+        }
+      },
+      generateKeys: function(encryptedSaltedPassword, passwordKey) {
+        const result = allocate(exports.opq_size_of_result())
+        const encryptedPrivateKey = allocate(exports.opq_size_of_encrypted_private_key())
+        const publicKey = allocate(exports.opq_size_of_public_key())
+
+        exports.opq_generate_keys(result, 
+          encryptedPrivateKey, 
+          publicKey, 
+          base64.decode(encryptedSaltedPassword), 
+          base64.decode(passwordKey)
+        )
+        verifyResult(result)
+
+        return {
+          encryptedPrivateKey: base64.encode(
+            encryptedPrivateKey,
+            exports.opq_size_of_encrypted_private_key()
+          ),
+          publicKey: base64.encode(
+            publicKey,
+            exports.opq_size_of_public_key()
+          )
+        }
+      },
+      generateVerification: function(encryptedPrivateKey, verificationNonce, encryptedSaltedPassword, passwordKey) {
+        const result = allocate(exports.opq_size_of_result())
+        const verification = allocate(exports.opq_size_of_verification())
+        
+        exports.opq_generate_verification(result,
+          verification,
+          base64.decode(encryptedPrivateKey),
+          base64.decode(verificationNonce),
+          base64.decode(encryptedSaltedPassword),
+          base64.decode(passwordKey),
+        )
+        verifyResult(result)
+
+        return base64.encode(verification, exports.opq_size_of_verification())
+      }
+    }
+
+    try {
+      const password = prompt("Enter password.", "weak password")
+      // Registration
+      {
+        const encryptionResult = api.encryptPassword(password)
+        const encryptedSaltedPassword = prompt(
+          "Encrypted password:\n" +
+          `${encryptionResult.encryptedPassword}\n` +
+          "Paste encrypted salted password:")
+
+        const registrationPayload = api.generateKeys(encryptedSaltedPassword, encryptionResult.passwordKey)
+        alert(`Registration Payload:\n${JSON.stringify(registrationPayload)}`)
+      }
+
+      // Authentication
+      {
+        const encryptionResult = api.encryptPassword(password)
+        const verificationRequest = JSON.parse(prompt(
+          "Encrypted password:\n" +
+          `${encryptionResult.encryptedPassword}\n` +
+          "Paste verification request:"))
+
+        const verification = api.generateVerification(verificationRequest.encryptedPrivateKey, verificationRequest.verificationNonce, verificationRequest.encryptedSaltedPassword, encryptionResult.passwordKey)
+        alert(`Verification:\n${verification}`)
+      }
+
+    }
+    catch(error) {
+      console.log(`Failed with error: ${error}`)
+    }
+
+  }
+  init()
+</script>

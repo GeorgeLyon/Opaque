@@ -19,7 +19,7 @@ final class OpaqueTests: XCTestCase {
             // Client sends encryptedPassword to the server
         
             // Server salts the encrypted password
-            let encryptedSaltedPassword = try encryptedPassword.salt(with: salt)
+            let encryptedSaltedPassword = try encryptedPassword.salted(with: salt)
             
             // Server responds with encryptedSaltedPassword
             
@@ -39,7 +39,7 @@ final class OpaqueTests: XCTestCase {
             // Client sends encryptedPassword to the server
             
             // Server salts the encrypted password
-            let encryptedSaltedPassword = try encryptedPassword.salt(with: salt)
+            let encryptedSaltedPassword = try encryptedPassword.salted(with: salt)
             
             // Server creates an unused verificationNonce
             let verificationNonce = nextVerificationNonce
@@ -64,7 +64,7 @@ final class OpaqueTests: XCTestCase {
             // Client sends encryptedPassword to the server
             
             // Server salts the encrypted password
-            let encryptedSaltedPassword = try encryptedPassword.salt(with: salt)
+            let encryptedSaltedPassword = try encryptedPassword.salted(with: salt)
             
             // Server creates an unused verificationNonce
             let verificationNonce = nextVerificationNonce
@@ -84,7 +84,7 @@ final class OpaqueTests: XCTestCase {
             // Client sends encryptedPassword to the server
             
             // Server salts the encrypted password
-            let encryptedSaltedPassword = try encryptedPassword.salt(with: salt)
+            let encryptedSaltedPassword = try encryptedPassword.salted(with: salt)
             
             // Server creates an unused verificationNonce
             let verificationNonce = nextVerificationNonce
