@@ -16,9 +16,15 @@ A more subtle feature of Opaque is that the protocol allows for a client-run [ke
 
 While Opaque defines the methodology of authentication, it does not specify the specific cryptographic primitives to use. This implementation aims to provide a reasonable set of primitives to use, and configuration is not currently a non-goal.
 
+### Multiplicative Blinding versus Exponential Blinding
+
+In the academic paper, the password is protected using _exponential blinding_, while the internet draft suggests _multiplicative blinding_. For this implementation, we use exponential blinding because it results in a simpler API, which doesn't require the `v=g^k` term in the draft proposal. This may end up being slightly more computationally expensive, but this cost pales in comparison with even the simplest key derivation function.
+
 ### Cyclic Group of Prime Order: `secp256r1`
 
 [Elliptic curves](https://en.wikipedia.org/wiki/Elliptic-curve_cryptography) are very highly regarded cryptographic primitives. `secp256r1` is a cousin to `secp256k1` but with ostensibly random parameters (hence `r` instead of `k`). It is impossible to prove that the parameters were, in fact, [randomly and not nefariously chosen](https://crypto.stackexchange.com/questions/18965/is-secp256r1-more-secure-than-secp256k1) but there seems to be enough evidence that `secp256r1` is robust, at least for our purposes. The Koblitz curve, `secp256k1`, was also a contender but the parameters were chosen in the interest of efficiency, which doesn't really matter for our use case since we also want to use a fairly robust KDF. Also, the surfeit of financial interest in Bitcoin, which utilizes `secp256k1` has given rise to specialized hardware for executing cryptographic operations on this curve. As a result, a user (who doesn't have specialized hardware) is at a disadvantage against an attacker (who may have specialized hardware).
+
+**UPDATE:** Cloudflare's [League of Entropy](https://www.cloudflare.com/leagueofentropy/) now provides an interesting source of randomness, and may be a good candidate for generating verifiably random elliptic curves.
 
 ### Hash Function: `SHA-3`
 
@@ -27,7 +33,7 @@ While Opaque defines the methodology of authentication, it does not specify the 
 ### Key derivation function: `Argon2id`
 
 [Scrypt](https://en.wikipedia.org/wiki/Scrypt) and [Argon2](https://en.wikipedia.org/wiki/Argon2) are the most popular high-security KDFs. Argon2 is based on [BLAKE2](https://en.wikipedia.org/wiki/BLAKE_(hash_function)#BLAKE2) which is based on [Daniel J. Bernstien](https://en.wikipedia.org/wiki/Daniel_J._Bernstein)'s [ChaCha](https://en.wikipedia.org/wiki/Salsa20#ChaCha_variant) cipher. BLAKE2 participated in the SHA-3 competition, and though it lost to Keccak, it is still regarded as secure and Daniel J. Bernstein is very well regarded in the cryptography community.
-Argon2 comes in a few variants, and `Argon2id` is the hybrid mode, with one pass of `Argon2i` and one pass of `Argon2d`. This makes it a good defence against most adversaries. 
+Argon2 comes in a two variants, `Argon2i` and `Argon2d`. `Argon2id` is the hybrid mode which provides good protection against most adversaries. 
 
 ### Signatures and Encryption: `Curve25519`
 
