@@ -103,8 +103,6 @@ let package = Package(
             name: "WebAssemblyTestCompanion",
             targets: ["WebAssemblyTestCompanion"])
     ],
-    dependencies: [
-    ],
     targets: [
         //  Swift Sources
         .target(

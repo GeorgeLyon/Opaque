@@ -407,8 +407,8 @@ int crypto_scalarmult(u8 *q,const u8 *n,const u8 *p)
   a[0]=d[0]=1;
   for(i=254;i>=0;--i) {
     r=(z[i>>3]>>(i&7))&1;
-    sel25519(a,b,r);
-    sel25519(c,d,r);
+    sel25519(a,b,(int)r);
+    sel25519(c,d,(int)r);
     A(e,a,c);
     Z(a,a,c);
     A(c,b,d);
@@ -427,8 +427,8 @@ int crypto_scalarmult(u8 *q,const u8 *n,const u8 *p)
     M(a,d,f);
     M(d,b,x);
     S(b,e);
-    sel25519(a,b,r);
-    sel25519(c,d,r);
+    sel25519(a,b,(int)r);
+    sel25519(c,d,(int)r);
   }
   FOR(i,16) {
     x[i+16]=a[i];
@@ -545,7 +545,7 @@ int crypto_hashblocks(u8 *x,const u8 *m,u64 n)
 
   FOR(i,8) ts64(x+8*i,z[i]);
 
-  return n;
+  return (int)n;
 }
 
 static const u8 iv[64] = {
