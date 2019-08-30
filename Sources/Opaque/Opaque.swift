@@ -2,19 +2,19 @@ import CLibOpaque
 
 public enum Opaque {
 
-    public struct Salt {
+    public struct Salt: PersistableData, PersistableData_Internal {
         
-        fileprivate let raw: opq_salt
+        let raw: opq_salt
         
     }
     
-    public struct EncryptedPassword: Base64RawCodable {
+    public struct EncryptedPassword: PersistableData, PersistableData_Internal {
         
         let raw: opq_encrypted_password
         
     }
     
-    public struct EncryptedSaltedPassword: Base64RawCodable {
+    public struct EncryptedSaltedPassword: PersistableData, PersistableData_Internal {
         
         let raw: opq_encrypted_salted_password
         
@@ -26,19 +26,19 @@ public enum Opaque {
         
     }
     
-    public struct EncryptedPrivateKey: Base64RawCodable {
+    public struct EncryptedPrivateKey: PersistableData, PersistableData_Internal {
         
         let raw: opq_encrypted_private_key
         
     }
     
-    public struct PublicKey: Base64RawCodable {
+    public struct PublicKey: PersistableData, PersistableData_Internal {
         
         let raw: opq_public_key
         
     }
     
-    public struct VerificationNonce: Base64RawCodable {
+    public struct VerificationNonce: PersistableData, PersistableData_Internal {
         
         var raw: opq_verification_nonce
         
@@ -52,7 +52,7 @@ public enum Opaque {
         
     }
     
-    public struct Verification: Base64RawCodable {
+    public struct Verification: PersistableData, PersistableData_Internal {
         
         let raw: opq_verification
         
@@ -169,11 +169,12 @@ extension Opaque.Verification {
     
 }
 
-// MARK: - C Structs
+// MARK: - ExhaustiveBinaryRepresentable
 
-extension opq_encrypted_password: CStruct { }
-extension opq_encrypted_salted_password: CStruct { }
-extension opq_encrypted_private_key: CStruct { }
-extension opq_public_key: CStruct { }
-extension opq_verification_nonce: CStruct { }
-extension opq_verification: CStruct { }
+extension opq_salt: ExhaustiveBinaryRepresentable { }
+extension opq_encrypted_password: ExhaustiveBinaryRepresentable { }
+extension opq_encrypted_salted_password: ExhaustiveBinaryRepresentable { }
+extension opq_encrypted_private_key: ExhaustiveBinaryRepresentable { }
+extension opq_public_key: ExhaustiveBinaryRepresentable { }
+extension opq_verification_nonce: ExhaustiveBinaryRepresentable { }
+extension opq_verification: ExhaustiveBinaryRepresentable { }

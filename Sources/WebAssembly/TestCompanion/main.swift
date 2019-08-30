@@ -16,8 +16,8 @@ var verificationNonce = Opaque.VerificationNonce()
 let registrationPayload: RegistrationPayload
 do {
     print("Paste encrypted password (1):")
-    let encryptedPassword = Opaque.EncryptedPassword(
-        base64Encoded: readLine()!)!
+    let encryptedPassword = try Opaque.EncryptedPassword(
+        base64Encoded: readLine()!)
 
     let encryptedSaltedPassword = try encryptedPassword.salted(with: salt).base64EncodedString()
     print("Encrypted salted password:\n\(encryptedSaltedPassword)")
@@ -32,7 +32,7 @@ do {
 // Authenticate
 do {
     print("Paste encrypted password (2):")
-    let encryptedPassword = Opaque.EncryptedPassword(base64Encoded: readLine()!)!
+    let encryptedPassword = try Opaque.EncryptedPassword(base64Encoded: readLine()!)
     
     struct VerificationRequest: Codable {
         let encryptedPrivateKey: Opaque.EncryptedPrivateKey
@@ -53,7 +53,7 @@ do {
     print("Verification request:\n\(encodedVerificationRequest)")
     
     print("Paste verification:")
-    let verification = Opaque.Verification(base64Encoded: readLine()!)!
+    let verification = try! Opaque.Verification(base64Encoded: readLine()!)
     try verification.validate(registrationPayload.publicKey, currentVerificationNonce)
     
     print("Verification is valid!")
