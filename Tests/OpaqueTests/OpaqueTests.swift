@@ -109,8 +109,14 @@ final class OpaqueTests: XCTestCase {
         }
         
     }
+    
+    func testRegistrationToken() throws {
+        let registrationToken: Opaque.RegistrationToken = try .random()
+        XCTAssertEqual(registrationToken, registrationToken)
+    }
 
     static var allTests = [
+        ("testRegistrationToken", testRegistrationToken),
         ("testExample", testExample),
     ]
 }

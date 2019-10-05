@@ -30,7 +30,7 @@ protocol ExhaustiveBinaryRepresentable {
 
 }
 
-protocol PersistableData_Internal {
+protocol PersistableData_Internal: Equatable {
     
     associatedtype Raw: ExhaustiveBinaryRepresentable
     
@@ -39,6 +39,8 @@ protocol PersistableData_Internal {
     var raw: Raw { get }
 
 }
+
+// MARK: - Coding and Decoding
 
 private enum Error: Swift.Error {
     case unexpectedByteCount(observed: Int, expected: Int)
@@ -87,6 +89,20 @@ extension PersistableData_Internal {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(data())
+    }
+    
+}
+
+// MARK: - Equatable
+
+extension PersistableData_Internal {
+    
+    public static func ==(lhs: Self, rhs: Self) -> Bool {
+        return lhs.withUnsafeBytes { lhsBytes in
+            rhs.withUnsafeBytes { rhsBytes in
+                lhsBytes.elementsEqual(rhsBytes)
+            }
+        }
     }
     
 }

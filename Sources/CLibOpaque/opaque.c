@@ -148,6 +148,24 @@ typedef struct __attribute__((packed)) {
 
 // MARK: - API
 
+opq_result opq_generate_registration_token(
+                opq_registration_token *output_registration_token)
+{
+    ec_params params;
+    import_default_params(&params);
+
+    nn random;
+    nn_init(&random, 0);
+    if (nn_get_random_mod(&random, &params.ec_gen_order) != 0)
+        return FATAL_ERROR("Failed to generate entropy");
+
+    assert(sizeof(*output_registration_token) == BYTECEIL(params.ec_gen_order_bitlen));
+    nn_export_to_buf((u8 *)output_registration_token, sizeof(*output_registration_token), &random);
+    nn_uninit(&random);
+
+    return SUCCESS;
+}
+
 opq_result opq_generate_random_salt(
                 opq_salt *output_salt)
 {

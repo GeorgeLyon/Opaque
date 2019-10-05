@@ -1,6 +1,12 @@
 import CLibOpaque
 
 public enum Opaque {
+    
+    public struct RegistrationToken: PersistableData, Equatable, PersistableData_Internal {
+        
+        let raw: opq_registration_token
+        
+    }
 
     public struct Salt: PersistableData, PersistableData_Internal {
         
@@ -58,6 +64,16 @@ public enum Opaque {
         
     }
 
+}
+
+extension Opaque.RegistrationToken {
+    
+    public static func random() throws -> Opaque.RegistrationToken {
+        var raw = opq_registration_token()
+        try opq_generate_registration_token(&raw).throwIfError()
+        return Opaque.RegistrationToken(raw: raw)
+    }
+    
 }
 
 extension Opaque.Salt {
@@ -171,6 +187,7 @@ extension Opaque.Verification {
 
 // MARK: - ExhaustiveBinaryRepresentable
 
+extension opq_registration_token: ExhaustiveBinaryRepresentable { }
 extension opq_salt: ExhaustiveBinaryRepresentable { }
 extension opq_encrypted_password: ExhaustiveBinaryRepresentable { }
 extension opq_encrypted_salted_password: ExhaustiveBinaryRepresentable { }

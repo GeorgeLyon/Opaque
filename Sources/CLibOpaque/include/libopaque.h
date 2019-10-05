@@ -30,6 +30,13 @@ typedef struct {
     } body;
 } opq_result;
 
+/**
+ While not explicitly part of the OPAQUE flow, many OPAQUE implementations will use a registration token to grant someone the ability to register a new password by, for instance, sending them the token through email. This library provides the `opq_registration_token` type in order to make sure all clients using this pattern generate these tokens consistently. Registration token equality may be determined using this types underlying binary representation.
+ */
+typedef struct {
+    opq_word words[4];
+} opq_registration_token;
+
 typedef struct {
     opq_word words[4];
 } opq_salt;
@@ -61,6 +68,9 @@ typedef struct {
 typedef struct {
     opq_word words[8];
 } opq_verification;
+
+opq_result opq_generate_registration_token(
+               opq_registration_token *output_registration_token);
 
 opq_result opq_generate_random_salt(
                 opq_salt *output_salt);
