@@ -79,7 +79,8 @@ clang \
 -Wl,--export={malloc,strlen} \
 -Wl,--export=opq_{encrypt_password,generate_keys,generate_verification} \
 -Wl,--export=opq_size_of_{result,encrypted_password,password_key,encrypted_salted_password,encrypted_private_key,public_key,verification_nonce,verification} \
--Wl,--export=opq_result_{message, type{,_{success,failure,fatal_error}}} \
+-Wl,--export=opq_result_message \
+-Wl,--export=opq_result_type{,_{success,failure,fatal_error}} \
 -Wl,--export=Base64{en,de}code{,_len} \
 -Wl,--allow-undefined \
 -Wl,--lto-O3 \
