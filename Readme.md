@@ -72,7 +72,7 @@ To run the code, simply have Swift installed and run `swift test`.
 ```
 clang \
 --target=wasm32 \
--Os \
+-Oz \
 -flto \
 -nostdlib \
 -Wl,--no-entry \
