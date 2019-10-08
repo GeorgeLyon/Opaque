@@ -67,7 +67,7 @@ To run the code, simply have Swift installed and run `swift test`.
 
 #### Compiling to WebAssembly
 
-**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the clang that ships with Xcode does not support this. 
+**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the clang that ships with Xcode does not support this. This was tested with `llvm` version `9.0.0`.
 
 ```
 clang \
@@ -76,6 +76,7 @@ clang \
 -flto \
 -nostdlib \
 -Wl,--no-entry \
+-Wl,--export=__heap_base \
 -Wl,--export={malloc,strlen} \
 -Wl,--export=opq_{encrypt_password,generate_keys,generate_verification} \
 -Wl,--export=opq_size_of_{result,encrypted_password,password_key,encrypted_salted_password,encrypted_private_key,public_key,verification_nonce,verification} \
