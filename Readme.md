@@ -67,7 +67,9 @@ To run the code, simply have Swift installed and run `swift test`.
 
 #### Compiling to WebAssembly
 
-**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the clang that ships with Xcode does not support this. This was tested with `llvm` version `9.0.0`.
+**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the `clang` that ships with Xcode does not support this. This was tested with `llvm` version `9.0.0`.
+
+**NOTE:** The command below requires `jq` to extract the list of source files from the package.
 
 ```
 clang \

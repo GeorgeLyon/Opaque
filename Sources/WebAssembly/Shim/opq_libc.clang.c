@@ -18,12 +18,6 @@ void *memset(void *restrict dst, int c, size_t n) {
     return dst;
 }
 
-int memcmp(const void *vl, const void *vr, size_t n) {
-    const unsigned char *l=vl, *r=vr;
-    for (; n && *l == *r; n--, l++, r++);
-    return n ? *l-*r : 0;
-}
-
 void *memcpy(void *restrict dst, const void *restrict src, size_t n) {
     char *d = (char *)dst;
     const char *s = (const char *)src;

@@ -40,6 +40,22 @@
     memcpy(destination, source, source_size); \
 }
 
+/**
+ A version of `memcmp` that does not stop after it finds a difference in the data and thus is resistant to sidechannel attacks.
+ */
+static int constant_time_memcmp(const void * in_a, const void * in_b, size_t len)
+{
+    size_t i;
+    const volatile unsigned char *a = in_a;
+    const volatile unsigned char *b = in_b;
+    unsigned char x = 0;
+
+    for (i = 0; i < len; i++)
+        x |= a[i] ^ b[i];
+
+    return x;
+}
+
 // LibECC primitive
 
 static void import_default_params(ec_params *out) {
@@ -418,7 +434,7 @@ opq_result opq_validate_verification(
         (const unsigned char *)public_key);
     if (result != 0
         || verified_nonce_length != sizeof(opq_verification_nonce)
-        || memcmp(&signed_nonce.nonce, &verified_nonce, verified_nonce_length) != 0)
+        || constant_time_memcmp(&signed_nonce.nonce, &verified_nonce, verified_nonce_length) != 0)
         return FAILURE("Verification is invalid");
     
     return SUCCESS;
