@@ -45,11 +45,11 @@ All dependencies are vendored for convenience, though care is taken not to edit 
 
 ### LibECC
 
-We use [`libecc`](https://github.com/ANSSI-FR/libecc) for operations on `secp256r1`.  `libecc` also provides SHA3, which is convenient and saves us an extra dependency. Most importantly, `libecc` aims to be simple and uses a minimal amount of code to provide the functionality Opaque requires. Also, `libecc` seems to be under development by the French government, which gives me hope that it is (or will become) fairly robust.
+We use [`libecc`](https://github.com/ANSSI-FR/libecc) for operations on `secp256r1`.  `libecc` also implements SHA-3, which is convenient and saves us an extra dependency. Most importantly, `libecc` aims to be simple and uses a minimal amount of code to provide the functionality Opaque requires. Also, `libecc` seems to be under development by the French government, which gives me hope that it is (or will become) fairly robust.
 
 ### PHC-winner-argon2
 
-[Argon2](https://github.com/P-H-C/phc-winner-argon2) won the [Password Hashing Competition](https://password-hashing.net). We currently use their reference implementation as it is compact and simple. The other alternative, `libsodium` is well regarded but seemed harder to vendor as a dpendency as it is often recommended to have the static library installed on your system to use.
+[Argon2](https://github.com/P-H-C/phc-winner-argon2) won the [Password Hashing Competition](https://password-hashing.net). We currently use their reference implementation as it is compact and simple. The other alternative, `libsodium` is well regarded but seemed harder to vendor as a dependency as it is often recommended to have the static library installed on your system to use.
 
 ### TweetNaCl
 
@@ -67,7 +67,7 @@ To run the code, simply have Swift installed and run `swift test`.
 
 #### Compiling to WebAssembly
 
-**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the `clang` that ships with Xcode does not support this. This was tested with `llvm` version `9.0.0`.
+**NOTE:** WebAssembly requires a version of `clang` that supports  `--target=wasm32`. Notably, the `clang` that ships with Xcode does not support this. This was last tested with `llvm` version `9.0.0`.
 
 **NOTE:** The command below requires `jq` to extract the list of source files from the package.
 
