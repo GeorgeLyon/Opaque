@@ -14,7 +14,7 @@ A more subtle feature of Opaque is that the protocol allows for a client-run [ke
 
 ## Selection of cryptographic primitives
 
-While Opaque defines the methodology of authentication, it does not specify the specific cryptographic primitives to use. This implementation aims to provide a reasonable set of primitives to use, and configuration is not currently a non-goal.
+While Opaque defines the methodology of authentication, it does not specify the specific cryptographic primitives to use. This implementation aims to provide a reasonable set of primitives to use, and configuration is currently a non-goal.
 
 ### Multiplicative Blinding versus Exponential Blinding
 
