@@ -28,7 +28,7 @@ In the academic paper, the password is protected using _exponential blinding_, w
 
 ### Hash Function: `SHA-3`
 
-[SHA-2](https://en.wikipedia.org/wiki/SHA-2) is showing signs of age, and it was developed by the US Government and not by the community at large. While [SHA-3](https://en.wikipedia.org/wiki/SHA-3) shares its name and is also endorsed by NIST, it was the product of a lengthy, open standardization process and thus engenders more confidence that it does not have a [back door](https://en.wikipedia.org/wiki/Backdoor_(computing)). SHA-3 is very simple, and can be implemented in a [couple hundred lines of C](https://github.com/mjosaarinen/tiny_sha3/blob/master/sha3.c), and the underlying permutation ([Keccak](https://keccak.team)) is quite powerful and has [other cool applications](https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/august/introducing-disco/).
+[SHA-2](https://en.wikipedia.org/wiki/SHA-2) is showing signs of age, and it was developed by the US Government and not by the community at large. While [SHA-3](https://en.wikipedia.org/wiki/SHA-3) shares its name and is also endorsed by NIST, it was the product of a lengthy, open standardization process and thus engenders more confidence that it does not have a [back door](https://en.wikipedia.org/wiki/Backdoor_(computing)). SHA-3 is very simple, and can be implemented in a [couple hundred lines of C](https://github.com/mjosaarinen/tiny_sha3/blob/master/sha3.c), and the underlying permutation ([Keccak](https://keccak.team)) is quite powerful and has other cool applications](https://eprint.iacr.org/2019/180.pdf).
 
 ### Key derivation function: `Argon2id`
 
